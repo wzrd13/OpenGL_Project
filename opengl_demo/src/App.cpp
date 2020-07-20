@@ -10,12 +10,16 @@
 #include "Shader.h"
 #include "VertexBufferLayout.h"
 #include "Renderer.h"
+#include "Texture.h"
+
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 int main(void)
 {
     GLFWwindow* window;
 
-    /* Initialize the library */
+    /* Initialize the GLFW library */
     if (!glfwInit())
         return -1;
 
@@ -30,9 +34,12 @@ int main(void)
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
+    
     glfwSwapInterval(1);
 
     unsigned int err;
+
+    /* Initialize the GLEW library */
     if ((err = glewInit())) 
     {
         std::cout << "failed to initialize GLEW.\n" << glewGetErrorString(err) << std::endl;
@@ -47,10 +54,10 @@ int main(void)
 
     {
         float positions[] = {
-            -0.5f, -0.5f,
-             0.5f, -0.5f,
-             0.5f,  0.5f,
-            -0.5f,  0.5f,
+            -0.5f, -0.5f, 0.0f, 0.0f,
+             0.5f, -0.5f, 1.0f, 0.0f,
+             0.5f,  0.5f, 1.0f, 1.0f,
+            -0.5f,  0.5f, 0.0f, 1.0f
         };
 
         unsigned int indices[] = {
@@ -58,14 +65,18 @@ int main(void)
              2, 3, 0
         };
 
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
         unsigned int vao;
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
 
         VertexArray va;
-        VertexBuffer vb(positions, 4 * 2 * sizeof(float));
+        VertexBuffer vb(positions, 4 * 4 * sizeof(float));
 
         VertexBufferLayout layout;
+        layout.Push<float>(2);
         layout.Push<float>(2);
         va.AddBuffer(vb, layout);
 
@@ -74,6 +85,10 @@ int main(void)
         Shader shader("res/shaders/vs.shader", "res/shaders/fs.shader");
         shader.Bind();
         shader.SetUniform4f("u_Color", 0.2f, 0.3f, 0.8f, 1.0f);
+
+        Texture texture("res/textures/covid.png");
+        texture.Bind();
+        shader.SetUniform1i("u_Texture", 0);
 
         va.UnBind();
         shader.Unbind();
