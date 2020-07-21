@@ -1,9 +1,8 @@
+/* GLEW GLFW */
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include <iostream>
-#include <string>
-
+/* OpenGL API */
 #include "IndexBuffer.h"
 #include "VertexBuffer.h"
 #include "VertexArray.h"
@@ -11,9 +10,31 @@
 #include "VertexBufferLayout.h"
 #include "Renderer.h"
 #include "Texture.h"
+#include "PCamera.h"
+#include "Movement.h"
 
+/* GLM */
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include <glm\gtx\string_cast.hpp>
+//#include <glm/gtx/transform.hpp>
+
+/* ImGUI */
+#include "imgui\imgui_impl_glfw_gl3.h"
+#include <imgui\imgui.h>
+
+#include <iostream>
+#include <string>
+
+/* Window Width-Height */
+constexpr auto width = 1680;
+constexpr auto height = 1050;
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        exit(0);
+}
 
 int main(void)
 {
@@ -24,7 +45,7 @@ int main(void)
         return -1;
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(width, height, "Hello World", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -33,11 +54,11 @@ int main(void)
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
-
     
     glfwSwapInterval(1);
 
     unsigned int err;
+
 
     /* Initialize the GLEW library */
     if ((err = glewInit())) 
@@ -54,41 +75,60 @@ int main(void)
 
     {
         float positions[] = {
-            -0.5f, -0.5f, 0.0f, 0.0f,
-             0.5f, -0.5f, 1.0f, 0.0f,
-             0.5f,  0.5f, 1.0f, 1.0f,
-            -0.5f,  0.5f, 0.0f, 1.0f
+           -5.0f, -5.0f, -15.0f, 1.0f,    1.0f, 0.0f, 0.0f, 1.0f,
+            5.0f, -5.0f, -15.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,
+            5.0f,  5.0f, -15.0f, 1.0f,    0.0f, 0.0f, 1.0f, 1.0f,
+           -5.0f,  5.0f, -15.0f, 1.0f,    1.0f, 0.0f, 1.0f, 1.0f,
+                                 
+           -5.0f, -5.0f, -5.0f, 1.0f,    1.0f, 0.0f, 0.0f, 1.0f,
+            5.0f, -5.0f, -5.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,
+            5.0f,  5.0f, -5.0f, 1.0f,    0.0f, 0.0f, 1.0f, 1.0f,
+           -5.0f,  5.0f, -5.0f, 1.0f,    1.0f, 0.0f, 1.0f, 1.0f
         };
 
         unsigned int indices[] = {
              0, 1, 2,
-             2, 3, 0
+             2, 3, 0,
+
+             4, 5, 6,
+             6, 7, 4,
+
+             4, 0, 3,
+             3, 7, 4,
+
+             1, 5, 6,
+             6, 2, 1,
+
+             5, 1, 0,
+             0, 4, 5,
+
+             7, 3, 2,
+             2, 6, 7
         };
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        unsigned int vao;
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
+        // Enable depth test
+        glEnable(GL_DEPTH_TEST);
+        // Accept fragment if it closer to the camera than the former one
+        glDepthFunc(GL_LESS);
 
         VertexArray va;
-        VertexBuffer vb(positions, 4 * 4 * sizeof(float));
+        VertexBuffer vb(positions,  sizeof(positions));
 
         VertexBufferLayout layout;
-        layout.Push<float>(2);
-        layout.Push<float>(2);
+        layout.Push<float>(4);
+        layout.Push<float>(4);
         va.AddBuffer(vb, layout);
 
-        IndexBuffer ib(indices, 6);
+        IndexBuffer ib(indices, 6 * 6);
 
         Shader shader("res/shaders/vs.shader", "res/shaders/fs.shader");
         shader.Bind();
-        shader.SetUniform4f("u_Color", 0.2f, 0.3f, 0.8f, 1.0f);
 
-        Texture texture("res/textures/covid.png");
-        texture.Bind();
-        shader.SetUniform1i("u_Texture", 0);
+        //Texture texture("res/textures/covid.png");
+        //texture.Bind();
+        //shader.SetUniform1i("u_Texture", 0);
 
         va.UnBind();
         shader.Unbind();
@@ -97,26 +137,50 @@ int main(void)
 
         Renderer renderer;
 
-        float r = 0.0f;
-        float increment = 0.05f;
+        /*ImGui::CreateContext();
+        ImGui_ImplGlfwGL3_Init(window, true);
+        ImGui::StyleColorsDark();*/
 
+        glm::vec3 look(0.0f, 0.0f, 0.0f);
+        glm::vec3 position(0.0f, 0.0f, 10.0f);
+
+        PCamera camera(45.0f, (float)width / (float)height, 0.1f, 100.0f);
+        camera.SetPosition(glm::vec3(0.0f, 0.0f, 10.0f));
+        camera.SetLookAt(glm::vec3(0.0f, 0.0f, 0.0f));
+
+        Movement camera_movement(window);
+      
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window))
         {
             /* Render here */
             renderer.Clear();
 
+            //ImGui_ImplGlfwGL3_NewFrame();
+
             shader.Bind();
-            shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
+
+            glfwSetKeyCallback(window, key_callback);
+
+            camera_movement.OnUpdate();
+
+            camera.SetPosition(camera_movement.GetPosition());
+            camera.SetLookAt(camera_movement.GetDirection() + camera_movement.GetPosition());
+            shader.SetUniformMat4f("u_MVP", camera.GetViewProjectionMatrix());
 
             renderer.Draw(va, ib, shader);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-            if (r > 1.0f)
-                increment = -0.05f;
-            else if (r < 0.0f)
-                increment = 0.05f;
 
-            r += increment;
+            ///* IamGUI */
+            //{
+            //    ImGui::Text("Hello, to your mama");                           
+            //    ImGui::SliderFloat3("TranslationA", &position.x, -90.0f, 90.0f); 
+            //    ImGui::SliderFloat3("look", &look.x, -10.0f, +10.0f);
+            //}
+
+            //ImGui::Render();
+            //ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 
             /* Swap front and back buffers */
             glfwSwapBuffers(window);
@@ -124,8 +188,10 @@ int main(void)
             /* Poll for and process events */
             glfwPollEvents();
         }
+        
     }
-    
+    //ImGui_ImplGlfwGL3_Shutdown();
+    //ImGui::DestroyContext();
     glfwTerminate();
     return 0;
 }
