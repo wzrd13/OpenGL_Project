@@ -89,21 +89,6 @@ int main(void)
         unsigned int indices[] = {
              0, 1, 2,
              2, 3, 0,
-
-             4, 5, 6,
-             6, 7, 4,
-
-             4, 0, 3,
-             3, 7, 4,
-
-             1, 5, 6,
-             6, 2, 1,
-
-             5, 1, 0,
-             0, 4, 5,
-
-             7, 3, 2,
-             2, 6, 7
         };
 
         glEnable(GL_BLEND);
@@ -113,15 +98,27 @@ int main(void)
         // Accept fragment if it closer to the camera than the former one
         glDepthFunc(GL_LESS);
 
-        VertexArray va;
+        //VertexArray va;
         VertexBuffer vb(positions,  sizeof(positions));
 
         VertexBufferLayout layout;
-        layout.Push<float>(4);
-        layout.Push<float>(4);
-        va.AddBuffer(vb, layout);
+        //layout.Push<float>(4);
+        //layout.Push<float>(4);
 
-        IndexBuffer ib(indices, 6 * 6);
+        unsigned int va;
+        glGenVertexArrays(1, &va);
+        glBindVertexArray(va);
+
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(4 * sizeof(float)));
+
+
+        //va.AddBuffer(vb, layout);
+
+        IndexBuffer ib(indices, 6);
 
         Shader shader("res/shaders/vs.shader", "res/shaders/fs.shader");
         shader.Bind();
@@ -130,7 +127,8 @@ int main(void)
         //texture.Bind();
         //shader.SetUniform1i("u_Texture", 0);
 
-        va.UnBind();
+        //va.UnBind();
+        glBindVertexArray(0);
         shader.Unbind();
         vb.Unbind();
         ib.Unbind();
@@ -168,8 +166,11 @@ int main(void)
             camera.SetLookAt(camera_movement.GetDirection() + camera_movement.GetPosition());
             shader.SetUniformMat4f("u_MVP", camera.GetViewProjectionMatrix());
 
-            renderer.Draw(va, ib, shader);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            //renderer.Draw(va, ib, shader);
+            shader.Bind();
+            glBindVertexArray(va);
+            ib.Bind();
+            glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, nullptr);
 
 
             ///* IamGUI */
