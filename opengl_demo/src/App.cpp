@@ -25,10 +25,68 @@
 
 #include <iostream>
 #include <string>
+#include <array>
 
 /* Window Width-Height */
 constexpr auto width = 1680;
 constexpr auto height = 1050;
+
+struct Vertex
+{
+    glm::vec4 Position;
+    glm::vec4 Color;
+    glm::vec2 TextureCords;
+    float TextureId;
+};
+
+void imgui()
+{
+    // Place outside while loop
+    /*ImGui::CreateContext();
+    ImGui_ImplGlfwGL3_Init(window, true);
+    ImGui::StyleColorsDark();*/
+    ImGui_ImplGlfwGL3_NewFrame();
+
+    /* IamGUI */
+    {
+        ImGui::Text("Hello, to your mama");
+        //ImGui::SliderFloat3("TranslationA", &position.x, -90.0f, 90.0f);
+        //ImGui::SliderFloat3("look", &look.x, -10.0f, +10.0f);
+    }
+
+    ImGui::Render();
+    ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+static std::array<Vertex, 4> CreateQuad(float x, float y, float z, unsigned int size, glm::vec4 color, float textureid)
+{
+    Vertex v0;
+    v0.Position = { x, y, z, 1.0f };
+    v0.Color = color;
+    v0.TextureCords = { 0.0f, 0.0f };
+    v0.TextureId = textureid;
+
+    Vertex v1;
+    v1.Position = { x + size, y, z, 1.0f };
+    v1.Color = color;
+    v1.TextureCords = { 1.0f, 0.0f };
+    v1.TextureId = textureid;
+
+    Vertex v2;
+    v2.Position = { x + size,  y + size, z, 1.0f };
+    v2.Color = color;
+    v2.TextureCords = { 1.0f, 1.0f };
+    v2.TextureId = textureid;
+
+    Vertex v3;
+    v3.Position = { x,  y + size, z, 1.0f };
+    v3.Color = color;
+    v3.TextureCords = { 0.0f, 1.0f };
+    v3.TextureId = textureid;
+
+    return { v0, v1, v2, v3 };
+}
+
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -135,10 +193,6 @@ int main(void)
 
         Renderer renderer;
 
-        /*ImGui::CreateContext();
-        ImGui_ImplGlfwGL3_Init(window, true);
-        ImGui::StyleColorsDark();*/
-
         glm::vec3 look(0.0f, 0.0f, 0.0f);
         glm::vec3 position(0.0f, 0.0f, 10.0f);
 
@@ -171,17 +225,6 @@ int main(void)
             glBindVertexArray(va);
             ib.Bind();
             glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, nullptr);
-
-
-            ///* IamGUI */
-            //{
-            //    ImGui::Text("Hello, to your mama");                           
-            //    ImGui::SliderFloat3("TranslationA", &position.x, -90.0f, 90.0f); 
-            //    ImGui::SliderFloat3("look", &look.x, -10.0f, +10.0f);
-            //}
-
-            //ImGui::Render();
-            //ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 
             /* Swap front and back buffers */
             glfwSwapBuffers(window);
