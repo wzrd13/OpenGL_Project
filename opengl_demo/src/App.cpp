@@ -12,6 +12,7 @@
 #include "Texture.h"
 #include "PCamera.h"
 #include "Movement.h"
+#include "Mesh.h"
 
 /* GLM */
 #include "glm/glm.hpp"
@@ -25,19 +26,14 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 #include <array>
 
 /* Window Width-Height */
 constexpr auto width = 1680;
 constexpr auto height = 1050;
 
-struct Vertex
-{
-    glm::vec4 Position;
-    glm::vec4 Color;
-    glm::vec2 TextureCords;
-    float TextureId;
-};
+Movement* camera_movement;
 
 void imgui()
 {
@@ -58,40 +54,53 @@ void imgui()
     ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-static std::array<Vertex, 4> CreateQuad(float x, float y, float z, unsigned int size, glm::vec4 color, float textureid)
-{
-    Vertex v0;
-    v0.Position = { x, y, z, 1.0f };
-    v0.Color = color;
-    v0.TextureCords = { 0.0f, 0.0f };
-    v0.TextureId = textureid;
-
-    Vertex v1;
-    v1.Position = { x + size, y, z, 1.0f };
-    v1.Color = color;
-    v1.TextureCords = { 1.0f, 0.0f };
-    v1.TextureId = textureid;
-
-    Vertex v2;
-    v2.Position = { x + size,  y + size, z, 1.0f };
-    v2.Color = color;
-    v2.TextureCords = { 1.0f, 1.0f };
-    v2.TextureId = textureid;
-
-    Vertex v3;
-    v3.Position = { x,  y + size, z, 1.0f };
-    v3.Color = color;
-    v3.TextureCords = { 0.0f, 1.0f };
-    v3.TextureId = textureid;
-
-    return { v0, v1, v2, v3 };
-}
-
-
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        exit(0);
+        camera_movement->SetEscapeFlag();
+}
+
+static std::vector<Vertex> CreateQuad(glm::vec3 position, unsigned int size, glm::vec4 color, float textureid)
+{
+    Vertex v0;
+    v0.Position = { position.x, position.y, position.z, 1.0f };
+    v0.Color = color;
+    v0.Normal = { 0.0f, 0.0f, 0.0f };
+    v0.TexCoords = { 0.0f, 0.0f };
+
+    Vertex v1;
+    v1.Position = { position.x + size, position.y, position.z, 1.0f };
+    v1.Color = color;
+    v1.Normal = { 0.0f, 0.0f, 0.0f };
+    v1.TexCoords = { 1.0f, 0.0f };
+
+    Vertex v2;
+    v2.Position = { position.x + size,  position.y + size, position.z, 1.0f };
+    v2.Color = color;
+    v2.Normal = { 0.0f, 0.0f, 0.0f };
+    v2.TexCoords = { 1.0f, 1.0f };
+
+    Vertex v3;
+    v3.Position = { position.x,  position.y + size, position.z, 1.0f };
+    v3.Color = color;
+    v3.Normal = { 0.0f, 0.0f, 0.0f };
+    v3.TexCoords = { 0.0f, 1.0f };
+    
+    return { v0, v1, v2, v3 };
+}
+
+static std::vector<Vertex> Cube(glm::vec3 position, unsigned int size, glm::vec4 color, float textureid)
+{
+    auto q1 = CreateQuad(glm::vec3(position.x, position.y, position.z), size, color, textureid);
+    auto q2 = CreateQuad(glm::vec3(position.x, position.y, position.z + size), size, color, textureid);
+
+    q1.insert(
+        q1.end(),
+        std::make_move_iterator(q2.begin()),
+        std::make_move_iterator(q2.end())
+    );
+
+    return q1;
 }
 
 int main(void)
@@ -132,14 +141,44 @@ int main(void)
     std::cout << glGetString(GL_VERSION) << std::endl;
 
     {
-        Vertex vertices[4];
-        auto q1 = CreateQuad(-2.0f, -2.0f, 0.0f, 4, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0.0f);
-        memcpy(vertices, q1.data(), q1.size() * sizeof(Vertex));
+        //Vertex vertices[8];
+        //memcpy(vertices, q1.data(), q1.size() * sizeof(Vertex));
+        //memcpy(vertices + 4, q2.data(), q2.size() * sizeof(Vertex));
 
-        unsigned int indices[] = {
+        std::vector<unsigned int> rect = {
              0, 1, 2,
              2, 3, 0,
         };
+
+        std::vector<unsigned int> cube = {
+            // front
+            0, 1, 2,
+            2, 3, 0,
+            // right
+            1, 5, 6,
+            6, 2, 1,
+            // back
+            7, 6, 5,
+            5, 4, 7,
+            // left
+            4, 0, 3,
+            3, 7, 4,
+            // bottom
+            4, 5, 1,
+            1, 0, 4,
+            // top
+            3, 2, 6,
+            6, 7, 3
+        };
+
+        glm::vec3 position1(5.0f, 5.0f, 5.0f);
+        glm::vec3 position2(-5.0f, 15.0f, 0.0f);
+        auto q1 = Cube(position1, 4, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0.0f);
+        auto q2 = Cube(position2, 1, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f);
+
+
+        Mesh mesh1(q1.size(), cube);
+        Mesh mesh2(q2.size(), cube);
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -148,53 +187,52 @@ int main(void)
         // Accept fragment if it closer to the camera than the former one
         glDepthFunc(GL_LESS);
 
-        VertexArray va;
-        VertexBuffer vb(vertices,  sizeof(vertices));
-
-        VertexBufferLayout layout(sizeof(Vertex));
-        layout.Push<float>(4, offsetof(Vertex, Position));
-        layout.Push<float>(4, offsetof(Vertex, Color));
-
-        va.AddBuffer(vb, layout);
-
-        IndexBuffer ib(indices, 6);
-
         Shader shader("res/shaders/vs.shader", "res/shaders/fs.shader");
         shader.Bind();
 
-        va.UnBind();
-        shader.Unbind();
-        vb.Unbind();
-        ib.Unbind();
-
-        Renderer renderer;
-
-        glm::vec3 look(0.0f, 0.0f, 0.0f);
-        glm::vec3 position(0.0f, 0.0f, 10.0f);
-
         PCamera camera(45.0f, (float)width / (float)height, 0.1f, 100.0f);
-        camera.SetPosition(glm::vec3(0.0f, 0.0f, 10.0f));
+        camera.SetPosition(glm::vec3(0.0f, 0.0f, 50.0f));
         camera.SetLookAt(glm::vec3(0.0f, 0.0f, 0.0f));
 
-        Movement camera_movement(window);
+        camera_movement = new Movement(window);
+
+        ImGui::CreateContext();
+        ImGui_ImplGlfwGL3_Init(window, true);
+        ImGui::StyleColorsDark();
       
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window))
         {
             /* Render here */
-            renderer.Clear();
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            //glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-            shader.Bind();
+            //glfwSetKeyCallback(window, key_callback);
+
+            /* IamGUI */
+            {
+                ImGui_ImplGlfwGL3_NewFrame();
+                ImGui::Text("Hello, to your mama");
+                ImGui::SliderFloat3("TranslationA", &position2.x, -90.0f, 90.0f);
+                ImGui::Render();
+                ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
+            }
+
+            /* Dynamic Draw */
+            q2 = Cube(position2, 1, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f);
+
+            mesh1.Draw(shader);
+            mesh1.UpdateMesh(q1);
+            mesh2.Draw(shader);
+            mesh2.UpdateMesh(q2);
+
+            camera_movement->OnUpdate();
 
             glfwSetKeyCallback(window, key_callback);
 
-            camera_movement.OnUpdate();
-
-            camera.SetPosition(camera_movement.GetPosition());
-            camera.SetLookAt(camera_movement.GetDirection() + camera_movement.GetPosition());
+            camera.SetPosition(camera_movement->GetPosition());
+            camera.SetLookAt(camera_movement->GetDirection() + camera_movement->GetPosition());
             shader.SetUniformMat4f("u_MVP", camera.GetViewProjectionMatrix());
-
-            renderer.Draw(va, ib, shader);
 
             /* Swap front and back buffers */
             glfwSwapBuffers(window);
