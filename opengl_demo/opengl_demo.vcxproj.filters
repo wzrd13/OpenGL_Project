@@ -63,6 +63,9 @@
     <ClCompile Include="src\Movement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Mesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\vs.shader">
@@ -1381,7 +1384,7 @@
     <ClInclude Include="src\Movement.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Header.h">
+    <ClInclude Include="src\Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

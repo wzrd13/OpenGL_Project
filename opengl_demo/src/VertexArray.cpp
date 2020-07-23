@@ -22,7 +22,7 @@ void VertexArray::AddBuffer(VertexBuffer& vb, const VertexBufferLayout& layout)
 		const auto& element = elements[i];
 		glEnableVertexAttribArray(i);
 		glVertexAttribPointer(i, element.count, element.type, element.normalized, layout.GetStride(), (const void*)element.offset);
-		std::cout << element.count << " " << element.offset << " " << layout.GetStride() << std::endl;
+		//std::cout << element.count << " " << element.offset << " " << layout.GetStride() << std::endl;
 	}
 	
 }

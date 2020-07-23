@@ -152,6 +152,7 @@
   <ItemGroup>
     <ClCompile Include="src\App.cpp" />
     <ClCompile Include="src\IndexBuffer.cpp" />
+    <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Movement.cpp" />
     <ClCompile Include="src\PCamera.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
@@ -307,7 +308,7 @@
     <None Include="src\vendor\glm\gtx\wrap.inl" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Header.h" />
+    <ClInclude Include="src\Mesh.h" />
     <ClInclude Include="src\Movement.h" />
     <ClInclude Include="src\PCamera.h" />
     <ClInclude Include="src\IndexBuffer.h" />
