@@ -1,10 +1,12 @@
 #include "Movement.h"
 #include <iostream>
 
+
 Movement::Movement(GLFWwindow *window)
 	: m_Window(window)
 {
 	glfwGetWindowSize(m_Window, &m_Width, &m_Height);
+	glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void  Movement::OnUpdate()
@@ -18,10 +20,13 @@ void  Movement::OnUpdate()
 
 	glfwGetCursorPos(m_Window, &m_xpos, &m_ypos);
 
-	glfwSetCursorPos(m_Window, (double)m_Width / 2, (double)m_Height / 2);
+	if(!escape_flag)
+	{
+		glfwSetCursorPos(m_Window, (double)m_Width / 2, (double)m_Height / 2);
 
-	m_HorizontalAngle += m_MouseSpeed * deltaTime * float(m_Width / 2 - m_xpos);
-	m_VerticalAngle += m_MouseSpeed * deltaTime * float(m_Height / 2 - m_ypos);
+		m_HorizontalAngle += m_MouseSpeed * deltaTime * float(m_Width / 2 - m_xpos);
+		m_VerticalAngle += m_MouseSpeed * deltaTime * float(m_Height / 2 - m_ypos);
+	}
 
 	m_Direction = glm::vec3(
 		cos(m_VerticalAngle) * sin(m_HorizontalAngle), 
@@ -87,3 +92,15 @@ glm::vec3 Movement::GetPosition()
 {
 	return m_Position;
 }
+
+void Movement::SetEscapeFlag()
+{
+	escape_flag = !escape_flag;
+	glfwSetCursorPos(m_Window, (double)m_Width / 2, (double)m_Height / 2);
+	if(escape_flag == 0)
+		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	else
+		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+}
+
+
