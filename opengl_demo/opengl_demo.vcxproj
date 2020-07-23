@@ -169,6 +169,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\fs.shader" />
+    <None Include="res\shaders\fs_light.shader" />
     <None Include="res\shaders\vs.shader" />
     <None Include="src\vendor\glm\detail\func_common.inl" />
     <None Include="src\vendor\glm\detail\func_common_simd.inl" />

@@ -24,8 +24,10 @@ Mesh::Mesh(unsigned int count, const std::vector<unsigned int>& indices)
 
 void Mesh::Draw(const Shader& shader)
 {
-    Renderer renderer;
-    renderer.Draw(VAO, IBO, shader);
+    shader.Bind();
+    VAO.Bind();
+    IBO.Bind();
+    glDrawElements(GL_TRIANGLES, IBO.GetCount(), GL_UNSIGNED_INT, nullptr);
 }
 
 void Mesh::UpdateMesh(std::vector<Vertex> vertices)

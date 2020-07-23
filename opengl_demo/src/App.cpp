@@ -141,15 +141,7 @@ int main(void)
     std::cout << glGetString(GL_VERSION) << std::endl;
 
     {
-        //Vertex vertices[8];
-        //memcpy(vertices, q1.data(), q1.size() * sizeof(Vertex));
-        //memcpy(vertices + 4, q2.data(), q2.size() * sizeof(Vertex));
-
-        std::vector<unsigned int> rect = {
-             0, 1, 2,
-             2, 3, 0,
-        };
-
+        // Index Vector
         std::vector<unsigned int> cube = {
             // front
             0, 1, 2,
@@ -171,15 +163,18 @@ int main(void)
             6, 7, 3
         };
 
+        // Create Cubes Cordinates
         glm::vec3 position1(5.0f, 5.0f, 5.0f);
         glm::vec3 position2(-5.0f, 15.0f, 0.0f);
         auto q1 = Cube(position1, 4, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0.0f);
         auto q2 = Cube(position2, 1, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f);
 
+        // Create Cubes
+        Mesh mesh1(q1, cube);
+        Mesh mesh2(q2, cube);
 
-        Mesh mesh1(q1.size(), cube);
-        Mesh mesh2(q2.size(), cube);
 
+        // Gl Blend for textures
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         // Enable depth test
@@ -187,8 +182,11 @@ int main(void)
         // Accept fragment if it closer to the camera than the former one
         glDepthFunc(GL_LESS);
 
+        // Create Shaders
         Shader shader("res/shaders/vs.shader", "res/shaders/fs.shader");
-        shader.Bind();
+        Shader light_shader("res/shaders/vs.shader", "res/shaders/fs_light.shader");
+        std::cout << light_shader.GetID() << std::endl;
+        std::cout << shader.GetID() << std::endl;
 
         PCamera camera(45.0f, (float)width / (float)height, 0.1f, 100.0f);
         camera.SetPosition(glm::vec3(0.0f, 0.0f, 50.0f));
@@ -196,43 +194,39 @@ int main(void)
 
         camera_movement = new Movement(window);
 
-        ImGui::CreateContext();
+        /*ImGui::CreateContext();
         ImGui_ImplGlfwGL3_Init(window, true);
-        ImGui::StyleColorsDark();
+        ImGui::StyleColorsDark();*/
       
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window))
         {
             /* Render here */
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            //glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-            //glfwSetKeyCallback(window, key_callback);
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            
+            glfwSetKeyCallback(window, key_callback);
 
             /* IamGUI */
-            {
+            /*{
                 ImGui_ImplGlfwGL3_NewFrame();
                 ImGui::Text("Hello, to your mama");
                 ImGui::SliderFloat3("TranslationA", &position2.x, -90.0f, 90.0f);
                 ImGui::Render();
                 ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
-            }
+            }*/
 
-            /* Dynamic Draw */
-            q2 = Cube(position2, 1, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f);
+
+            mesh2.Draw(light_shader);
 
             mesh1.Draw(shader);
-            mesh1.UpdateMesh(q1);
-            mesh2.Draw(shader);
-            mesh2.UpdateMesh(q2);
 
             camera_movement->OnUpdate();
-
-            glfwSetKeyCallback(window, key_callback);
 
             camera.SetPosition(camera_movement->GetPosition());
             camera.SetLookAt(camera_movement->GetDirection() + camera_movement->GetPosition());
             shader.SetUniformMat4f("u_MVP", camera.GetViewProjectionMatrix());
+            //light_shader.SetUniformMat4f("u_MVP", camera.GetViewProjectionMatrix());
 
             /* Swap front and back buffers */
             glfwSwapBuffers(window);
